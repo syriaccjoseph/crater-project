@@ -19,6 +19,9 @@ import numpy as np
 
 class Network(object):
 
+    false_pos = []
+    false_neg =  []
+
     def __init__(self, sizes):
         """The list ``sizes`` contains the number of neurons in the
         respective layers of the network.  For example, if the list
@@ -55,9 +58,6 @@ class Network(object):
         if test_data: n_test = len(test_data)
         n = len(training_data)
         start_time = end_time = timeit.default_timer()
-        det = 0
-        fal = 0
-        qty = 0
 
         for j in xrange(epochs):
             random.shuffle(training_data)
@@ -71,16 +71,14 @@ class Network(object):
             if test_data:
                 end_time = timeit.default_timer() - start_time
                 print(end_time)
-                tp,fp, fn, det, fal, qty = self.evaluate(test_data) 
-                print "Epoch {0}: {1}, {2}, {3}, {4}, {5}, {6} / {7}".format(
-                    j, tp, fp, fn, det, fal, qty, n_test)
-                ##print "Epoch {0}: {1} / {2}".format(
-                ##    j, self.evaluate(test_data), n_test)
+
+                false_pos, false_neg, detection, false_rate, quality, self.false_pos, self.false_neg = self.evaluate(test_data)
+                print "Epoch {0}: False Pos :{1} False Neg :{2} Detection : {3} False Rate : {4} Quality : {5}".format(
+                    j, false_pos, false_neg, detection, false_rate, quality)
                 # print "Epoch {0}: {1} , {2}, {3}, detection : {4}, false rate : {5}, quality : {6}".format(
                 #     j, self.evaluate(test_data), n_test)
             else:
                 print "Epoch {0} complete".format(j)
-        return tp, fp, fn, det, fal, qty
 
     def update_mini_batch(self, mini_batch, eta):
         """Update the network's weights and biases by applying
@@ -89,7 +87,7 @@ class Network(object):
         is the learning rate."""
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
-        for x, y in mini_batch:
+        for x, y, _ in mini_batch:
             delta_nabla_b, delta_nabla_w = self.backprop(x, y)
             nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
             nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
@@ -145,25 +143,34 @@ class Network(object):
         #return sum(int(x == y) for (x, y) in test_results)
 
 
-        test_results = [(self.feedforward(x), y) for (x, y) in test_data]
-        true_pos = sum(((x>=.5 and y==1) or (x<.5 and y==0)) for (x,y) in test_results)
-        false_pos = sum((x>=.5 and y==0)  for (x,y) in test_results)
-        false_neg = sum((x<.5 and y==1) for (x,y) in test_results)
-        #print (true_pos, false_pos, false_neg)
+        test_results = [(self.feedforward(x), y) for (x, y, _) in test_data]
+        true_pos = sum(((x >= .5 and y == 1) or (x < .5 and y == 0)) for (x, y) in test_results)
+        #false_pos = sum((x >= .5 and y == 0)  for (x, y) in test_results)
+        #false_neg = sum((x < .5 and y == 1) for (x, y, _) in test_results)
+
+        false_pos = false_neg = 0
+        false_pos_img = []
+        false_neg_img = []
+        for i in range(0, len(test_results)):
+            if test_results[i][0] >= .5 and test_results[i][1] == 0 :
+                false_pos += 1
+                false_pos_img.append(test_data[i][2])
+            if test_results[i][0] < .5 and test_results[i][1] == 1 :
+                false_neg += 1
+                false_neg_img.append(test_data[i][2])
+
+                #print (true_pos, false_pos, false_neg)
 
         detection = float(true_pos) / (true_pos + false_neg)
         false_rate = float(false_pos) / (true_pos + false_pos)
         quality = float(true_pos) / (true_pos + false_pos + false_neg)
         #print (detection, false_rate, quality)
-        detection *= 100
-        false_rate *= 100
-        quality *= 100
-        
-        return true_pos, false_pos, false_neg, detection, false_rate, quality
-         		
-        #list_values = [detection, false_rate, quality]
+        false_pos_img.sort()
+        false_neg_img.sort()
 
-        #return list_values
+
+        return false_pos, false_neg, detection, false_rate, quality, false_pos_img, false_neg_img
+
 
     def cost_derivative(self, output_activations, y):
         """Return the vector of partial derivatives \partial C_x /
