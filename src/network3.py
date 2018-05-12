@@ -78,10 +78,10 @@ def load_data_shared():
         the data to the GPU, if one is available.
 
         """
-        #shared_x = theano.shared(
-        #    np.asarray(data[0], dtype=theano.config.floatX), borrow=True)
+        shared_x = theano.shared(
+            np.asarray(data[0][0], dtype=theano.config.floatX), borrow=True)
         shared_y = theano.shared(
-            np.asarray(data[1], dtype=theano.config.floatX), borrow=True)
+            np.asarray(data[0][1], dtype=theano.config.floatX), borrow=True)
         return shared_x, T.cast(shared_y, "int32")
     return [shared(training_data), shared(validation_data), shared(test_data)]
 
@@ -321,3 +321,6 @@ def dropout_layer(layer, p_dropout):
         np.random.RandomState(0).randint(999999))
     mask = srng.binomial(n=1, p=1-p_dropout, size=layer.shape)
     return layer*T.cast(mask, theano.config.floatX)
+
+	
+load_data_shared()

@@ -90,7 +90,8 @@ def load_crater_data_phaseII_wrapper():
         crater_array_label.append(train_data[i][1][0][0])
     for i in range(len(train_data)):
         crater_array_data.append(train_data[i][0][0])
-    training_data = zip([crater_array_data],[crater_array_label])
+    #training_data = zip([crater_array_data],[crater_array_label])
+	training_data = zip([np.array(crater_array_data)],[np.array(crater_array_label)])
     #print training_data
     crater_array_label = []
     crater_array_data = []		
@@ -99,7 +100,8 @@ def load_crater_data_phaseII_wrapper():
         crater_array_label.append(validation_data[i][1][0][0])
     for i in range(len(validation_data)):
         crater_array_data.append(validation_data[i][0][0])
-    validating_data = zip([crater_array_data],[crater_array_label])
+    #validating_data = zip([crater_array_data],[crater_array_label])
+    validating_data = zip([np.array(crater_array_data)],[np.array(crater_array_label)])
 	
     crater_array_label = []
     crater_array_data = []	
@@ -108,7 +110,21 @@ def load_crater_data_phaseII_wrapper():
         crater_array_label.append(test_data[i][1][0][0])
     for i in range(len(test_data)):
         crater_array_data.append(test_data[i][0][0])
-    testing_data = zip([crater_array_data],[crater_array_label])
+    testing_data = zip([np.array(crater_array_data)],[np.array(crater_array_label)])
+	
+    #print "TRAINING DATA"
+    #print training_data[0][0]
+    #print training_data[0][1]
+	
+    #print "VALIDATING DATA"
+    #print validating_data[0][0]
+    #print validating_data[0][1]
+	
+    #print "TESTING DATA"
+    #print testing_data[0][0]
+    #print testing_data[0][1]
+	
+	#print training_data[1][0]
     #print testing_data
     #return train_data, validation_data, test_data
     #print "TRAIN DATA"
