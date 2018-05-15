@@ -25,13 +25,29 @@ from network3 import ConvPoolLayer, FullyConnectedLayer, SoftmaxLayer
 training_data, validation_data, test_data = network3.load_data_shared()
 mini_batch_size = 10
 
+def our_conv_net(n=3, epochs=20):
+    for j in range(n):
+        net = Network([
+            ConvPoolLayer(image_shape=(mini_batch_size, 1, 28, 28), 
+                          filter_shape=(20, 1, 5, 5), 
+                          poolsize=(2, 2)),
+            FullyConnectedLayer(n_in=20*12*12, n_out=100),
+            FullyConnectedLayer(n_in=100, n_out=100),
+            FullyConnectedLayer(n_in=100, n_out=100),
+            SoftmaxLayer(n_in=100, n_out=2)], mini_batch_size)
+        net.SGD(
+            training_data, epochs, mini_batch_size, 0.3, validation_data, test_data)
+    return net 
+            
+
+
 def shallow(n=3, epochs=60):
     nets = []
     for j in range(n):
         print "A shallow net with 100 hidden neurons"
         net = Network([
             FullyConnectedLayer(n_in=40000, n_out=100),
-            SoftmaxLayer(n_in=100, n_out=1)], mini_batch_size)
+            SoftmaxLayer(n_in=100, n_out=2)], mini_batch_size)
         net.SGD(
             training_data, epochs, mini_batch_size, 0.1, 
             validation_data, test_data)
@@ -228,11 +244,23 @@ def ensemble(nets):
                        if plurality_test_predictions[j] != test_y_eval[j]]
     erroneous_predictions = [plurality(all_test_predictions[j])
                              for j in error_locations]
+    true_pos = [j for j in xrange(10000) 
+                       if plurality_test_predictions[j] == test_y_eval[j]]
+    false_pos = [j for j in xrange(10000) 
+                       if plurality_test_predictions[j] == 1 && test_y_eval[j] == 0]
+    false_neg = [j for j in xrange(10000) 
+                       if plurality_test_predictions[j] == 0 && test_y_eval[j] == 1]
     print "Accuracy is {:.2%}".format((1-len(error_locations)/10000.0))
-    return error_locations, erroneous_predictions
+    return error_locations, erroneous_predictions, true_pos, false_pos, false_neg
 
-def plot_errors(error_locations, erroneous_predictions=None):
+def plot_errors(error_locations, erroneous_predictions=None, true_pos, false_pos, false_neg):
     test_x, test_y = test_data[0].eval(), test_data[1].eval()
+    detection = true_pos / (true_pos + false_neg)
+    false_rate = false_pos / (true_pos + false_pos)
+    quality_rate = true_pos / (true_pos + false_pos + false_neg)
+    print "Detection Rate: " + detection
+    print "False Rate: " + false_rate
+    print "Quality Rate: " + quality_rate
     fig = plt.figure()
     error_images = [np.array(test_x[i]).reshape(28, -1) for i in error_locations]
     n = min(40, len(error_locations))
@@ -246,6 +274,26 @@ def plot_errors(error_locations, erroneous_predictions=None):
         plt.yticks(np.array([]))
     plt.tight_layout()
     return plt
+
+
+
+        # test_results = [(self.feedforward(x), y) for (x, y) in test_data]
+        # true_pos = sum(((x>=.5 and y==1) or (x<.5 and y==0)) for (x,y) in test_results)
+        # false_pos = sum((x>=.5 and y==0)  for (x,y) in test_results)
+        # false_neg = sum((x<.5 and y==1) for (x,y) in test_results)
+        # #print (true_pos, false_pos, false_neg)
+
+        # detection = float(true_pos) / (true_pos + false_neg)
+        # false_rate = float(false_pos) / (true_pos + false_pos)
+        # quality = float(true_pos) / (true_pos + false_pos + false_neg)
+        # #print (detection, false_rate, quality)
+        # detection *= 100
+        # false_rate *= 100
+        # quality *= 100
+
+
+
+
     
 def plot_filters(net, layer, x, y):
 
