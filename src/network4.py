@@ -34,19 +34,18 @@ versions of Theano.
 # Standard library
 import cPickle
 import gzip
+import timeit
 
 # Third-party libraries
 import numpy as np
 import theano
 import theano.tensor as T
-#from theano.tensor.nnet import conv
-from theano.tensor.nnet import conv2d
+import theano.tensor.nnet as conv
 from theano.tensor.nnet import softmax
 from theano.tensor import shared_randomstreams
 #from theano.tensor.signal import downsample
-#from theano.tensor.signal.pool import pool_2d
 from theano.tensor.signal import pool
-import crater_loader
+
 # Activation functions for neurons
 def linear(z): return z
 def ReLU(z): return T.maximum(0.0, z)
@@ -55,12 +54,12 @@ from theano.tensor import tanh
 
 
 #### Constants
-GPU = True
-#GPU = False
+#GPU = True
+GPU = False
 if GPU:
     print "Trying to run under a GPU.  If this is not desired, then modify "+\
         "network3.py\nto set the GPU flag to False."
-    try: theano.config.device = 'cuda7'
+    try: theano.config.device = 'cuda0'
     except: pass # it's already set
     theano.config.floatX = 'float32'
 else:
@@ -68,38 +67,10 @@ else:
         "network3.py to set\nthe GPU flag to True."
 
 #### Load the MNIST data
-def load_data_shared():
-
-    filename="../data/mnist.pkl.gz"
-    f = gzip.open(filename, 'rb')
-    training_data1, validation_data1, test_data1 = cPickle.load(f)
-    f.close()
-
-    training_data, validation_data, test_data = crater_loader.load_crater_data_phaseII_wrapper2()
-    #training_data, validation_data, test_data = crater_loader.load_crater_data_phaseII_wrapper()
-
-    def shared(data):
-        """Place the data into shared variables.  This allows Theano to copy
-        the data to the GPU, if one is available.
-
-        """
-        shared_x = theano.shared(
-            np.asarray(data[0], dtype=theano.config.floatX), borrow=True)
-        shared_y = theano.shared(
-            np.asarray(data[1], dtype=theano.config.floatX), borrow=True)
-        return T.cast(shared_x, "float32") , T.cast(shared_y, "int32")
-    return [shared(training_data), shared(validation_data), shared(test_data)]
-
-def load_data_shared1():
-
-    filename="../data/mnist.pkl.gz"
+def load_data_shared(filename="../data/mnist.pkl.gz"):
     f = gzip.open(filename, 'rb')
     training_data, validation_data, test_data = cPickle.load(f)
     f.close()
-
-    # training_data, validation_data, test_data = crater_loader.load_crater_data_phaseII_wrapper2()
-    # training_data, validation_data, test_data = crater_loader.load_crater_data_phaseII_wrapper()
-
     def shared(data):
         """Place the data into shared variables.  This allows Theano to copy
         the data to the GPU, if one is available.
@@ -109,7 +80,7 @@ def load_data_shared1():
             np.asarray(data[0], dtype=theano.config.floatX), borrow=True)
         shared_y = theano.shared(
             np.asarray(data[1], dtype=theano.config.floatX), borrow=True)
-        return shared_x , T.cast(shared_y, "int32")
+        return shared_x, T.cast(shared_y, "int32")
     return [shared(training_data), shared(validation_data), shared(test_data)]
 
 #### Main class used to construct and train networks
@@ -190,15 +161,18 @@ class Network(object):
             })
         # Do the actual training
         best_validation_accuracy = 0.0
+        start_time = end_time = timeit.default_timer()
         for epoch in xrange(epochs):
             for minibatch_index in xrange(num_training_batches):
                 iteration = num_training_batches*epoch+minibatch_index
-                if iteration % 10 == 0:
+                if iteration % 1000 == 0:
                     print("Training mini-batch number {0}".format(iteration))
                 cost_ij = train_mb(minibatch_index)
                 if (iteration+1) % num_training_batches == 0:
                     validation_accuracy = np.mean(
                         [validate_mb_accuracy(j) for j in xrange(num_validation_batches)])
+                    end_time = timeit.default_timer()
+                    print end_time - start_time
                     print("Epoch {0}: validation accuracy {1:.2%}".format(
                         epoch, validation_accuracy))
                     if validation_accuracy >= best_validation_accuracy:
@@ -259,14 +233,11 @@ class ConvPoolLayer(object):
 
     def set_inpt(self, inpt, inpt_dropout, mini_batch_size):
         self.inpt = inpt.reshape(self.image_shape)
-        # conv_out = conv.conv2d(
-        #    input=self.inpt, filters=self.w, filter_shape=self.filter_shape,
-        #    image_shape=self.image_shape)
-        conv_out = conv2d(
+        conv_out = conv.conv2d(
             input=self.inpt, filters=self.w, filter_shape=self.filter_shape,
             image_shape=self.image_shape)
-        # pooled_out = downsample.max_pool_2d(
         pooled_out = pool.pool_2d(
+        #pooled_out = downsample.max_pool_2d(
             input=conv_out, ds=self.poolsize, ignore_border=True)
         self.output = self.activation_fn(
             pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
@@ -335,8 +306,6 @@ class SoftmaxLayer(object):
 
     def accuracy(self, y):
         "Return the accuracy for the mini-batch."
-        y
-        self.y_out
         return T.mean(T.eq(y, self.y_out))
 
 
@@ -350,6 +319,3 @@ def dropout_layer(layer, p_dropout):
         np.random.RandomState(0).randint(999999))
     mask = srng.binomial(n=1, p=1-p_dropout, size=layer.shape)
     return layer*T.cast(mask, theano.config.floatX)
-
-	
-#load_data_shared()

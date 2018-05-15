@@ -147,12 +147,12 @@ def load_crater_data_phaseII_wrapper2():
     # for image in crater_glob:
     #     crater_array.append(cv.cvtColor(cv.imread(image), cv.COLOR_RGB2GRAY) / 255.0)
 
-    crater_array = [np.float32(np.reshape(cv.cvtColor(cv.imread(image), cv.COLOR_RGB2GRAY) / 255.0, (40000, ))) for image in crater_glob]
+    crater_array = [np.reshape(cv.cvtColor(cv.imread(image), cv.COLOR_RGB2GRAY) / 255.0, (40000, )) for image in crater_glob]
 
 
     # ones corresponding to each entry in crater_array
     #crater_ones =  np.ones(len(crater_array))
-    crater_ones =  [np.ones((1, ), dtype=np.int32)] * len(crater_array)
+    crater_ones =  [np.ones((1, ), dtype=np.float32)] * len(crater_array)
 
 
     # Getting data from normalize_images folder for non-crater images
@@ -167,14 +167,13 @@ def load_crater_data_phaseII_wrapper2():
     # for image in non_crater_glob:
     #     non_crater_array.append(cv.cvtColor(cv.imread(image), cv.COLOR_RGB2GRAY) / 255.0)
 
-    non_crater_array = [np.float32(np.reshape(cv.cvtColor(cv.imread(image), cv.COLOR_RGB2GRAY) / 255.0, (40000, ))) for image in
+    non_crater_array = [np.reshape(cv.cvtColor(cv.imread(image), cv.COLOR_RGB2GRAY) / 255.0, (40000, )) for image in
                         non_crater_glob]
-
 
     # zeros corresponding to each entry in non_crater_array
     #non_crater_zeros =  np.zeros(len(non_crater_array))
 
-    non_crater_zeros =  [np.zeros((1, ), dtype=np.int32)] * len(non_crater_array)
+    non_crater_zeros =  [np.zeros((1, ), dtype=np.float32)] * len(non_crater_array)
     #non_crater_zeros = np.zeros(1) * len(non_crater_array)
 
     #zipping both crater and non crater stuff

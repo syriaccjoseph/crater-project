@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<project name="ObserverAndMulticast" default="test">
+
+
+    <path id="classpath.test">
+        <pathelement location="${env.JUNIT}"/>
+        <pathelement location="${env.HAMCREST_CORE}"/>
+        <pathelement location="bin"/>
+        <pathelement location="${test.build.dir}"/>
+    </path>
+
+    <target name="clean">
+        <delete>
+            <fileset dir="." includes="*.pyc"/>
+        </delete>
+    </target>
+</project>
