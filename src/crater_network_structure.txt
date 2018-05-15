@@ -1,0 +1,25 @@
+
+
+def network_structure_test(n=300):
+    """n is the number of neurons in both fully-connected layers.  We'll
+    try n=100, 300, and 1000.
+
+    """
+    training_data, validation_data, test_data = network3.load_data_shared()
+    for j in range(3):
+        print "Training with expanded data, %s neurons in two FC layers, run num %s" % (n, j)
+        net = Network([
+            ConvPoolLayer(image_shape=(mini_batch_size, 1, 200, 200), 
+                          filter_shape=(20, 1, 5, 5), 
+                          poolsize=(2, 2), 
+                          activation_fn=ReLU),
+            ConvPoolLayer(image_shape=(mini_batch_size, 20, 98, 98), 
+                          filter_shape=(40, 20, 5, 5), 
+                          poolsize=(2, 2), 
+                          activation_fn=ReLU),
+            FullyConnectedLayer(n_in=40*47*47, n_out=n, activation_fn=ReLU),
+            FullyConnectedLayer(n_in=n, n_out=n, activation_fn=ReLU),
+            SoftmaxLayer(n_in=n, n_out=2)], mini_batch_size)
+        net.SGD(training_data, 60, mini_batch_size, 1, 
+                validation_data, test_data, lmbda=0.1)	
+	
